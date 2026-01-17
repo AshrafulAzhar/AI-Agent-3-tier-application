@@ -4,10 +4,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
+using UserManagement.Domain.DTOs;
 using UserManagement.Domain.Interfaces;
 using UserManagement.Repository;
 using UserManagement.Repository.Settings;
 using UserManagement.Service;
+using UserManagement.Service.Validators;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +33,11 @@ builder.Services.AddScoped(sp =>
 // Layer Registrations
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
+
+// Validator Registrations
+builder.Services.AddScoped<IValidator<UserRegistrationRequest>, IdentityValidator>();
+builder.Services.AddScoped<IValidator<UserRegistrationRequest>, PasswordPolicyValidator>();
+builder.Services.AddScoped<IValidator<UserRegistrationRequest>, AgePolicyValidator>();
 
 builder.Services.AddControllers();
 
