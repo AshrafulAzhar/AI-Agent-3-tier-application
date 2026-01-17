@@ -1,4 +1,5 @@
 using System;
+using UserManagement.Domain.Enums;
 
 namespace UserManagement.Domain.DTOs
 {
@@ -9,6 +10,8 @@ namespace UserManagement.Domain.DTOs
         public string DisplayName { get; set; }
         public string Email { get; set; }
         public string PhoneNumber { get; set; }
+        public UserRole Role { get; set; }
+        public UserStatus Status { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 }

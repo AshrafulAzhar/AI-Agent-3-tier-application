@@ -45,6 +45,21 @@ namespace UserManagement.Api.Controllers
             }
         }
 
+        [HttpPatch("{id}/management")]
+        public async Task<ActionResult<UserResponse>> UpdateManagement(string id, [FromBody] UserRoleStatusUpdateRequest request)
+        {
+            try
+            {
+                // Note: In a real app, this endpoint would be restricted to Admin users via [Authorize(Roles = "Admin")]
+                var result = await _userService.UpdateUserRoleStatusAsync(id, request);
+                return Ok(result);
+            }
+            catch (System.Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
         [HttpGet("{id}")]
         public async Task<ActionResult<UserResponse>> GetById(string id)
         {

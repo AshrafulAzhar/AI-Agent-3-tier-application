@@ -1,4 +1,5 @@
 using System;
+using UserManagement.Domain.Enums;
 
 namespace UserManagement.Domain.Models
 {
@@ -12,6 +13,8 @@ namespace UserManagement.Domain.Models
         public string PhoneNumber { get; set; }
         public string PasswordHash { get; set; }
         public DateTime? DateOfBirth { get; set; }
+        public UserRole Role { get; set; }
+        public UserStatus Status { get; set; }
         public bool IsDeleted { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }

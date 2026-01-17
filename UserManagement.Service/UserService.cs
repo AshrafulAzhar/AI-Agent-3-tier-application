@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using UserManagement.Domain.DTOs;
+using UserManagement.Domain.Enums;
 using UserManagement.Domain.Interfaces;
 using UserManagement.Domain.Models;
 using BC = BCrypt.Net.BCrypt;
@@ -27,17 +28,14 @@ namespace UserManagement.Service
 
         public async Task<UserResponse> RegisterUserAsync(UserRegistrationRequest request)
         {
-            // 1. Normalization
             request.Email = NormalizeEmail(request.Email);
             request.PhoneNumber = NormalizePhone(request.PhoneNumber);
 
-            // 2. Run Registration Validators
             foreach (var validator in _registrationValidators)
             {
                 await validator.ValidateAsync(request);
             }
 
-            // 3. Build User Model
             var user = new User
             {
                 Id = Guid.NewGuid().ToString(),
@@ -50,6 +48,8 @@ namespace UserManagement.Service
                 PhoneNumber = request.PhoneNumber,
                 PasswordHash = BC.HashPassword(request.Password),
                 DateOfBirth = request.DateOfBirth,
+                Role = UserRole.User, // Default Role
+                Status = UserStatus.Active, // Default Status
                 IsDeleted = false,
                 CreatedAt = DateTime.UtcNow
             };
@@ -61,21 +61,17 @@ namespace UserManagement.Service
 
         public async Task<UserResponse> UpdateUserAsync(string id, UserUpdateRequest request)
         {
-            // 0. Ensure user exists
             var user = await _userRepository.GetByIdAsync(id);
             if (user == null || user.IsDeleted) throw new Exception("User not found.");
 
-            // 1. Normalization
-            request.Id = id; // Set context for uniqueness check
+            request.Id = id;
             request.PhoneNumber = NormalizePhone(request.PhoneNumber);
 
-            // 2. Run Update Validators
             foreach (var validator in _updateValidators)
             {
                 await validator.ValidateAsync(request);
             }
 
-            // 3. Update User Model
             user.FirstName = request.FirstName.Trim();
             user.LastName = request.LastName.Trim();
             user.DisplayName = string.IsNullOrWhiteSpace(request.DisplayName)
@@ -85,6 +81,31 @@ namespace UserManagement.Service
             user.DateOfBirth = request.DateOfBirth;
             user.UpdatedAt = DateTime.UtcNow;
 
+            await _userRepository.UpdateAsync(id, user);
+
+            return MapToResponse(user);
+        }
+
+        public async Task<UserResponse> UpdateUserRoleStatusAsync(string id, UserRoleStatusUpdateRequest request)
+        {
+            var user = await _userRepository.GetByIdAsync(id);
+            if (user == null || user.IsDeleted) throw new Exception("User not found.");
+
+            if (request.Role.HasValue && user.Role != request.Role.Value)
+            {
+                // Audit Role Change
+                Console.WriteLine($"[AUDIT] User {id} role changed from {user.Role} to {request.Role.Value} at {DateTime.UtcNow}");
+                user.Role = request.Role.Value;
+            }
+
+            if (request.Status.HasValue && user.Status != request.Status.Value)
+            {
+                // Audit Status Change
+                Console.WriteLine($"[AUDIT] User {id} status changed from {user.Status} to {request.Status.Value} at {DateTime.UtcNow}");
+                user.Status = request.Status.Value;
+            }
+
+            user.UpdatedAt = DateTime.UtcNow;
             await _userRepository.UpdateAsync(id, user);
 
             return MapToResponse(user);
@@ -128,6 +149,8 @@ namespace UserManagement.Service
                 DisplayName = user.DisplayName,
                 Email = user.Email,
                 PhoneNumber = user.PhoneNumber,
+                Role = user.Role,
+                Status = user.Status,
                 CreatedAt = user.CreatedAt
             };
         }
